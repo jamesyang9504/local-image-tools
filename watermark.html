@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图片水印工具</title>
+<!-- 内嵌图标：书签栏 / 标签页 / 添加到主屏幕都会用它，不依赖外部文件 -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+IDxyZWN0IHg9IjQiIHk9IjEwIiB3aWR0aD0iNTYiIGhlaWdodD0iNDQiIHJ4PSI5IiBmaWxsPSIjMmY2ZmVkIi8+IDxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC45MiI+IDxyZWN0IHg9IjEyIiB5PSIxOSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjUiIHJ4PSIyLjUiLz4gPHJlY3QgeD0iMzQiIHk9IjE5IiB3aWR0aD0iMTgiIGhlaWdodD0iNSIgcng9IjIuNSIvPiA8cmVjdCB4PSIxMiIgeT0iMjkuNSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjUiIHJ4PSIyLjUiLz4gPHJlY3QgeD0iMzQiIHk9IjI5LjUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI1IiByeD0iMi41Ii8+IDxyZWN0IHg9IjEyIiB5PSI0MCIgd2lkdGg9IjE4IiBoZWlnaHQ9IjUiIHJ4PSIyLjUiLz4gPHJlY3QgeD0iMzQiIHk9IjQwIiB3aWR0aD0iMTgiIGhlaWdodD0iNSIgcng9IjIuNSIvPiA8L2c+PC9zdmc+">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+IDxyZWN0IHg9IjQiIHk9IjEwIiB3aWR0aD0iNTYiIGhlaWdodD0iNDQiIHJ4PSI5IiBmaWxsPSIjMmY2ZmVkIi8+IDxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC45MiI+IDxyZWN0IHg9IjEyIiB5PSIxOSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjUiIHJ4PSIyLjUiLz4gPHJlY3QgeD0iMzQiIHk9IjE5IiB3aWR0aD0iMTgiIGhlaWdodD0iNSIgcng9IjIuNSIvPiA8cmVjdCB4PSIxMiIgeT0iMjkuNSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjUiIHJ4PSIyLjUiLz4gPHJlY3QgeD0iMzQiIHk9IjI5LjUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI1IiByeD0iMi41Ii8+IDxyZWN0IHg9IjEyIiB5PSI0MCIgd2lkdGg9IjE4IiBoZWlnaHQ9IjUiIHJ4PSIyLjUiLz4gPHJlY3QgeD0iMzQiIHk9IjQwIiB3aWR0aD0iMTgiIGhlaWdodD0iNSIgcng9IjIuNSIvPiA8L2c+PC9zdmc+">
+<style>
+  :root{
+    --bg:#f6f6f7; --panel:#ffffff; --line:#e3e3e6; --text:#1d1d1f;
+    --sub:#7a7a80; --accent:#2f6fed; --accent-soft:#e8effd; --danger:#d64545;
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1c1c1e; --panel:#252528; --line:#3a3a3e; --text:#f2f2f4;
+           --sub:#96969c; --accent:#5b8dff; --accent-soft:#26334f; }
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    /* 界面本身也用免费商用字体；没装就回退到系统字体
+       （界面显示不涉及商用授权，这么做只是为了观感统一） */
+    font:13px/1.5 "Alibaba PuHuiTi 3.0","Alibaba PuHuiTi 2.0","MiSans",
+         -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    background:var(--bg); color:var(--text); overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{display:flex; height:100%}
+
+  /* ---------- 侧栏 ---------- */
+  #side{
+    width:290px; flex:0 0 290px; background:var(--panel);
+    border-right:1px solid var(--line); display:flex; flex-direction:column;
+  }
+  #sideHead{padding:14px 16px 10px; border-bottom:1px solid var(--line)}
+  #sideHead h1{margin:0;font-size:14px;font-weight:600;letter-spacing:.02em}
+  #sideHead p{margin:3px 0 0;font-size:11px;color:var(--sub)}
+  #sideBody{flex:1; overflow-y:auto; padding:12px 16px 24px}
+
+  .grp{margin-bottom:18px}
+  .grp>label.t{display:block;font-size:11px;font-weight:600;color:var(--sub);
+    text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .row .lbl{flex:0 0 58px;color:var(--sub);font-size:12px}
+  .row .val{flex:0 0 44px;text-align:right;color:var(--sub);
+    font-variant-numeric:tabular-nums;font-size:11px}
+
+  .seg{display:flex;background:var(--bg);border:1px solid var(--line);
+    border-radius:8px;padding:2px;gap:2px}
+  .seg button{flex:1;border:0;background:transparent;color:var(--text);
+    padding:6px 4px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit}
+  .seg button.on{background:var(--accent);color:#fff;font-weight:500}
+
+  /* 水印内容三选一：每个按钮各自成框，前两个各占一半，「文字+图片」独占一整行 */
+  .seg.seg3{background:none;border:0;padding:0;gap:8px;flex-wrap:wrap}
+  .seg.seg3 button{flex:1 1 calc(50% - 4px);background:var(--bg);
+    border:1.5px solid var(--line);border-radius:9px;padding:9px 6px;
+    transition:border-color .12s,background .12s}
+  .seg.seg3 button:hover{border-color:var(--accent)}
+  .seg.seg3 button.on{border-color:var(--accent);background:var(--accent-soft);
+    color:var(--accent);font-weight:600}
+  .seg.seg3 button[data-v="both"]{flex:1 1 100%}
+
+  /* both 模式下切换正在编辑哪一个 */
+  .seg.mini button{padding:4px 4px;font-size:11px}
+
+  /* 摆放方式：带示意图的卡片 */
+  .modes{display:flex;gap:8px}
+  .modes button{flex:1;min-width:0;background:var(--bg);border:1.5px solid var(--line);
+    border-radius:9px;padding:8px 6px 7px;cursor:pointer;color:var(--sub);
+    font-family:inherit;font-size:12px;display:flex;flex-direction:column;
+    align-items:center;gap:6px;transition:border-color .12s,background .12s}
+  .modes button:hover{border-color:var(--accent)}
+  .modes button.on{border-color:var(--accent);background:var(--accent-soft);
+    color:var(--accent);font-weight:600}
+  .modes svg{width:100%;height:42px;display:block}
+
+  input[type=text],textarea,select{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);
+    border-radius:8px;padding:7px 9px;font-family:inherit;font-size:12px;outline:none}
+  textarea{resize:none;min-height:52px;line-height:1.4;overflow:hidden}
+  textarea::-webkit-resizer{display:none}
+  input[type=text]:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+  input[type=color]{width:34px;height:26px;padding:0;border:1px solid var(--line);
+    border-radius:6px;background:none;cursor:pointer}
+  input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px}
+
+  button.btn{
+    width:100%;border:1px solid var(--line);background:var(--bg);color:var(--text);
+    padding:8px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px}
+  button.btn:hover{border-color:var(--accent);color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+  button.primary:hover{opacity:.9;color:#fff}
+  button.primary:disabled{opacity:.4;cursor:default}
+
+  .hint{font-size:11px;color:var(--sub);margin-top:6px;line-height:1.5}
+  .warn{font-size:11px;color:#c07a12;margin-top:6px;line-height:1.5}
+  .hide{display:none !important}
+
+  /* ---------- 主区 ---------- */
+  #main{flex:1;display:flex;flex-direction:column;min-width:0}
+  #stage{flex:1;position:relative;display:flex;align-items:center;
+    justify-content:center;padding:16px;min-height:0;overflow:hidden}
+  #cv{border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,.18);cursor:default;
+    background:#fff;max-width:100%;max-height:100%}
+  #empty{position:absolute;inset:24px;border:2px dashed var(--line);border-radius:14px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;color:var(--sub);text-align:center;cursor:pointer;
+    transition:border-color .15s}
+  #empty:hover{border-color:var(--accent)}
+  #empty b{font-size:15px;color:var(--text);font-weight:600}
+  #empty .plus{width:38px;height:38px;border-radius:50%;background:var(--accent);
+    color:#fff;font-size:24px;line-height:36px;font-weight:300}
+  #drop{position:absolute;inset:0;background:var(--accent-soft);
+    border:3px dashed var(--accent);border-radius:14px;display:flex;
+    align-items:center;justify-content:center;font-size:16px;font-weight:600;
+    color:var(--accent);z-index:50;pointer-events:none}
+
+  #strip{flex:0 0 auto;border-top:1px solid var(--line);background:var(--panel);
+    padding:8px 10px;display:flex;gap:8px;overflow-x:auto;align-items:center;min-height:64px}
+  .thumb{position:relative;flex:0 0 auto;width:56px;height:44px;border-radius:6px;
+    overflow:hidden;border:2px solid transparent;cursor:pointer;background:var(--bg)}
+  .thumb.on{border-color:var(--accent)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb .x{position:absolute;top:1px;right:1px;width:15px;height:15px;border-radius:50%;
+    background:rgba(0,0,0,.62);color:#fff;font-size:10px;line-height:15px;text-align:center;
+    opacity:0;transition:opacity .12s}
+  .thumb:hover .x{opacity:1}
+  #stripEmpty{color:var(--sub);font-size:12px;padding-left:4px}
+
+  #bar{flex:0 0 auto;border-top:1px solid var(--line);background:var(--panel);
+    padding:9px 14px;display:flex;align-items:center;gap:12px}
+  #barMsg{flex:1;font-size:12px;color:var(--sub);min-width:0;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  #bar button{width:auto;padding:8px 18px;flex:0 0 auto}
+  #prog{position:absolute;left:0;bottom:0;height:2px;background:var(--accent);width:0;
+    transition:width .15s}
+  #barWrap{position:relative}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ 侧栏 ============ -->
+  <aside id="side">
+    <div id="sideHead">
+      <h1>图片水印工具</h1>
+      <p>全部在本机处理，图片不会上传</p>
+    </div>
+    <div id="sideBody">
+
+      <div class="grp">
+        <label class="t">摆放方式</label>
+        <div class="modes" id="segMode">
+          <button data-v="single" class="on">
+            <svg viewBox="0 0 80 44" aria-hidden="true">
+              <rect x="1" y="1" width="78" height="42" rx="4" fill="none"
+                    stroke="currentColor" stroke-opacity=".35"/>
+              <rect x="42" y="9" width="30" height="8" rx="2"
+                    fill="currentColor" fill-opacity=".7"/>
+            </svg>
+            拖框定位
+          </button>
+          <button data-v="tile">
+            <svg viewBox="0 0 80 44" aria-hidden="true">
+              <rect x="1" y="1" width="78" height="42" rx="4" fill="none"
+                    stroke="currentColor" stroke-opacity=".35"/>
+              <g fill="currentColor" fill-opacity=".65">
+                <rect x="7"  y="8"  width="18" height="4.5" rx="2.25"/>
+                <rect x="31" y="8"  width="18" height="4.5" rx="2.25"/>
+                <rect x="55" y="8"  width="18" height="4.5" rx="2.25"/>
+                <rect x="7"  y="20" width="18" height="4.5" rx="2.25"/>
+                <rect x="31" y="20" width="18" height="4.5" rx="2.25"/>
+                <rect x="55" y="20" width="18" height="4.5" rx="2.25"/>
+                <rect x="7"  y="32" width="18" height="4.5" rx="2.25"/>
+                <rect x="31" y="32" width="18" height="4.5" rx="2.25"/>
+                <rect x="55" y="32" width="18" height="4.5" rx="2.25"/>
+              </g>
+            </svg>
+            平铺满图
+          </button>
+        </div>
+        <div class="hint" id="modeHint"></div>
+        <div class="hint" id="posInfo" style="color:var(--accent)"></div>
+      </div>
+
+      <div class="grp">
+        <label class="t">水印内容</label>
+        <div class="seg seg3" id="segKind">
+          <button data-v="text" class="on">文字</button>
+          <button data-v="image">图片</button>
+          <button data-v="both">文字 + 图片</button>
+        </div>
+        <div class="row hide" id="rowEdit" style="margin-top:8px">
+          <span class="lbl">正在调</span>
+          <div class="seg mini" id="editPick" style="flex:1">
+            <button data-l="text" class="on">文字</button>
+            <button data-l="image">图片</button>
+          </div>
+        </div>
+        <div class="hint hide" id="bothHint">两个水印各自独立，位置、大小、角度分开调。
+          也可以直接点预览里的灰色虚线框，切过去调那一个。</div>
+      </div>
+
+      <!-- 文字设置 -->
+      <div class="grp" id="grpText">
+        <label class="t">文字</label>
+        <textarea id="wmText" placeholder="输入水印文字，可换行">仅供办理业务使用</textarea>
+        <div class="row" style="margin-top:8px">
+          <span class="lbl">字体</span>
+          <select id="fontSel"></select>
+        </div>
+        <div class="row">
+          <span class="lbl">颜色</span>
+          <input type="color" id="wmColor" value="#ffffff">
+          <label style="display:flex;align-items:center;gap:4px;color:var(--sub);font-size:12px">
+            <input type="checkbox" id="wmBold" checked> 粗体</label>
+          <label style="display:flex;align-items:center;gap:4px;color:var(--sub);font-size:12px">
+            <input type="checkbox" id="wmStroke"> 描边</label>
+        </div>
+        <div id="fontWarn" class="warn hide"></div>
+        <button class="btn" id="btnFontFile" style="margin-top:6px">载入字体文件（可多选常规+粗体）</button>
+      </div>
+
+      <!-- 图片水印设置 -->
+      <div class="grp hide" id="grpImg">
+        <label class="t">水印图片</label>
+        <button class="btn" id="btnWmImg">选择 PNG / JPG…</button>
+        <div class="hint" id="wmImgName">建议用背景透明的 PNG。</div>
+      </div>
+
+      <div class="grp">
+        <label class="t">外观</label>
+        <div class="row"><span class="lbl">大小</span>
+          <input type="range" id="sSize" min="1" max="60" step="0.5" value="6">
+          <span class="val" id="vSize"></span></div>
+        <div class="row"><span class="lbl">透明度</span>
+          <input type="range" id="sOpa" min="5" max="100" step="1" value="45">
+          <span class="val" id="vOpa"></span></div>
+        <div class="row"><span class="lbl">角度</span>
+          <input type="range" id="sAng" min="-90" max="90" step="1" value="0">
+          <span class="val" id="vAng"></span></div>
+        <div class="row hide" id="rowGap"><span class="lbl">间距</span>
+          <input type="range" id="sGap" min="10" max="400" step="5" value="150">
+          <span class="val" id="vGap"></span></div>
+      </div>
+
+      <div class="grp">
+        <label class="t">输出</label>
+        <div class="row"><span class="lbl">格式</span>
+          <select id="fmt">
+            <option value="jpeg">JPG（体积小）</option>
+            <option value="png">PNG（无损）</option>
+          </select></div>
+        <div class="row" id="rowQ"><span class="lbl">画质</span>
+          <input type="range" id="sQ" min="50" max="100" step="1" value="92">
+          <span class="val" id="vQ"></span></div>
+        <div class="row"><span class="lbl">后缀</span>
+          <input type="text" id="suffix" value="_水印"></div>
+        <div class="row"><span class="lbl">方式</span>
+          <select id="dlMode">
+            <option value="zip">打包成 zip（推荐）</option>
+            <option value="each">逐张下载图片</option>
+          </select></div>
+        <div class="hint">导出文件名例：<span id="egName">照片_水印.jpg</span></div>
+        <div class="hint" id="dlHint"></div>
+      </div>
+
+      <button class="btn" id="btnReset">恢复默认设置</button>
+    </div>
+  </aside>
+
+  <!-- ============ 主区 ============ -->
+  <main id="main">
+    <div id="stage">
+      <canvas id="cv" class="hide"></canvas>
+      <div id="empty">
+        <div class="plus">+</div>
+        <b>点这里选图片，或者直接拖进来</b>
+        <span>支持一次选很多张</span>
+      </div>
+      <div id="drop" class="hide">松手即可添加</div>
+    </div>
+
+    <div id="strip"><span id="stripEmpty">还没有图片</span></div>
+
+    <div id="bar" style="position:relative">
+      <button class="btn" id="btnAdd" style="width:auto;padding:8px 14px">添加图片</button>
+      <button class="btn" id="btnClear" style="width:auto;padding:8px 14px">清空</button>
+      <span id="barMsg">准备就绪</span>
+      <button class="btn primary" id="btnExport" disabled>批量导出</button>
+      <div id="prog"></div>
+    </div>
+  </main>
+</div>
+
+<input type="file" id="fileIn" accept="image/*" multiple class="hide">
+<input type="file" id="wmImgIn" accept="image/png,image/jpeg,image/webp" class="hide">
+<input type="file" id="fontIn" accept=".ttf,.otf,.ttc,.woff,.woff2" multiple class="hide">
+
+<script>
+"use strict";
+
+/* =========================================================
+   1. 状态：两个独立图层
+   ---------------------------------------------------------
+   一个图层 = 一个完整独立的水印，各有各的位置、大小、角度、透明度、摆放方式。
+   两个可以同时开，比如「文字斜着平铺满图 + Logo 单独放右下角」。
+   ========================================================= */
+function textLayer(){ return {
+  on: true,
+  mode: 'single',        // single 拖框定位 | tile 平铺满图
+  text: '仅供办理业务使用',
+  font: 'alibaba3',
+  color: '#ffffff',
+  bold: true,
+  stroke: false,
+  size: 5, tileSize: 3.5,      // 两种摆放方式各记各的大小
+  angle: 0, tileAngle: -45,    // 角度同上
+  gap: 150,                    // 平铺间距（相对水印自身高度）
+  opacity: 45,
+  // 位置：记「贴着哪条边、离那条边多远」，距离以图片短边为单位，
+  // 这样横图竖图、大图小图，水印距边缘的留白比例完全一致。
+  ax: 'center', ay: 'bottom', ox: 0, oy: 0.06
+};}
+
+function imageLayer(){ return {
+  on: false,
+  mode: 'single',
+  size: 5, tileSize: 3.5,
+  angle: 0, tileAngle: -45,
+  gap: 150,
+  opacity: 100,                // 图片默认不减淡，保持原色
+  ax: 'right', ay: 'bottom', ox: 0.07, oy: 0.07
+};}
+
+function makeDefaults(){ return {
+  v: 6,                  // 参数含义改动时 +1，旧记忆会自动重置，避免出现莫名其妙的效果
+  kind: 'text',          // text 只文字 | image 只图片 | both 两个都要
+  active: 'text',        // both 时，当前正在调哪一个
+  text:  textLayer(),
+  image: imageLayer(),
+  fmt: 'jpeg',
+  quality: 92,
+  suffix: '_水印',
+  dlMode: 'zip'          // zip 打包 | each 逐张下载
+};}
+
+let S = makeDefaults();
+const LAYER_KEYS = ['text', 'image'];
+const L = (k) => S[k || S.active];                    // 当前（或指定）图层
+const activeLayers = () => LAYER_KEYS.filter(k => S[k].on);
+
+/* 「水印内容」三选一：决定哪些图层生效，以及默认在调哪一个 */
+function setKind(kind){
+  S.kind = kind;
+  S.text.on  = (kind !== 'image');
+  S.image.on = (kind !== 'text');
+  if (kind === 'text')  S.active = 'text';
+  if (kind === 'image') S.active = 'image';
+  if (kind === 'both' && !S[S.active].on) S.active = 'text';
+}
+
+let images = [];         // {name, base, w, h, file, thumbURL}
+let sel = -1;
+let curBmp = null;       // 当前预览用的缩小版位图
+let curFor = null;       // curBmp 对应的 image 对象
+let wmImg = null;        // 水印图片 ImageBitmap
+let wmImgName = '';
+let customFontLoaded = false;
+let busy = false;
+
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+/* =========================================================
+   2. 字体
+   ========================================================= */
+/* 判断某个字体名在本机是否真的存在：
+   分别拿 monospace 和 serif 当对照组量同一串字，宽度只要有一个对不上，就说明命中了真字体。*/
+function fontAvailable(family){
+  const probe = '水印测试Wg瀚国';
+  const c = fontAvailable._c ||
+        (fontAvailable._c = document.createElement('canvas').getContext('2d'));
+  const cmp = (fb) => {
+    c.font = '72px ' + fb;                  const a = c.measureText(probe).width;
+    c.font = '72px "' + family + '",' + fb; const b = c.measureText(probe).width;
+    return Math.abs(a - b) > 0.5;
+  };
+  return cmp('monospace') || cmp('serif');
+}
+
+/* 只收录明确声明「免费商用」的中文字体。
+   有版权限制的（微软雅黑、汉仪、方正，以及系统自带的苹方、宋体）不列入本工具的选项。
+   注意这只影响这个工具的下拉列表，你电脑里的字体一个都不动。
+   授权信息以各字体官方发布为准，这里只是按公开的免费商用声明整理。
+
+   candidates 里既有系统族名也有 PostScript 名——不同版本注册的名字不一样
+   （比如普惠体 3.0 的 PostScript 名用的是下划线 AlibabaPuHuiTi_3_55_Regular），
+   所以全都探一遍，用真正存在的那个。 */
+const FREE_FONTS = [
+  { key:'alibaba3', label:'阿里巴巴普惠体 3.0',
+    reg:['Alibaba PuHuiTi 3.0','AlibabaPuHuiTi_3_55_Regular','阿里巴巴普惠体 3.0'],
+    bold:['AlibabaPuHuiTi_3_85_Bold','Alibaba PuHuiTi 3.0 85 Bold','Alibaba PuHuiTi 3 85 Bold'] },
+  { key:'alibaba2', label:'阿里巴巴普惠体 2.0',
+    reg:['Alibaba PuHuiTi 2.0','AlibabaPuHuiTi_2_55_Regular','阿里巴巴普惠体 2.0'],
+    bold:['AlibabaPuHuiTi_2_85_Bold','Alibaba PuHuiTi 2.0 85 Bold',
+          'AlibabaPuHuiTi_2_95_ExtraBold','AlibabaPuHuiTi_2_105_Heavy'] },
+  { key:'misans', label:'MiSans（小米）',
+    reg:['MiSans','MiSans-Regular','MiSans VF'],
+    bold:['MiSans-Bold','MiSans Bold','MiSans-Semibold'] },
+  { key:'shuhei', label:'阿里妈妈数黑体',
+    reg:['Alimama ShuHeiTi','Alimama ShuHeiTi Bold','AlimamaShuHeiTi'], bold:[] },
+  { key:'harmony', label:'HarmonyOS Sans SC',
+    reg:['HarmonyOS Sans SC','HarmonyOS Sans','HarmonyOS_Sans_SC'],
+    bold:['HarmonyOS Sans SC Bold','HarmonyOS_Sans_SC_Bold'] },
+  { key:'oppo', label:'OPPO Sans',
+    reg:['OPPO Sans','OPPOSans','OPPO Sans 4.0'], bold:['OPPO Sans Bold','OPPOSans-B'] },
+  { key:'sourcehan', label:'思源黑体',
+    reg:['Source Han Sans SC','Noto Sans CJK SC','Source Han Sans CN','思源黑体'],
+    bold:['Source Han Sans SC Bold','Noto Sans CJK SC Bold'] },
+  { key:'sourceserif', label:'思源宋体',
+    reg:['Source Han Serif SC','Noto Serif CJK SC','思源宋体'],
+    bold:['Source Han Serif SC Bold','Noto Serif CJK SC Bold'] },
+  { key:'smiley', label:'得意黑',
+    reg:['Smiley Sans','Smiley Sans Oblique','SmileySans'], bold:[] },
+  { key:'wenkai', label:'霞鹜文楷',
+    reg:['LXGW WenKai','LXGW WenKai GB','霞鹜文楷'], bold:['LXGW WenKai Bold'] },
+  { key:'douyin', label:'抖音美好体',
+    reg:['DouyinSansBold','抖音美好体','Douyin Sans'], bold:[] },
+  { key:'zcool', label:'站酷系列',
+    reg:['ZCOOL KuaiLe','ZCOOL QingKe HuangYou','ZCOOL XiaoWei','站酷快乐体'], bold:[] }
+];
+
+let detected = [];   // 本机真正装了的免费商用字体：{key,label,regular,bold}
+
+/* CSS 里写的族名不一定命中（普惠体的 PostScript 名用的是下划线），
+   所以这里再按实际探测结果给界面兜一次底 */
+function applyUIFont(){
+  const cands = ['Alibaba PuHuiTi 3.0','AlibabaPuHuiTi_3_55_Regular',
+                 'Alibaba PuHuiTi 2.0','AlibabaPuHuiTi_2_55_Regular','MiSans'];
+  for (const n of cands){
+    if (fontAvailable(n)){
+      document.body.style.fontFamily = '"' + n + '",-apple-system,"PingFang SC",sans-serif';
+      return;
+    }
+  }
+}
+
+function detectFonts(){
+  detected = [];
+  applyUIFont();
+  for (const f of FREE_FONTS){
+    let reg = null, bold = null;
+    for (const n of f.reg) if (fontAvailable(n)) { reg = n; break; }
+    if (!reg) continue;
+    for (const n of (f.bold || [])) if (fontAvailable(n)) { bold = n; break; }
+    if (!bold && fontAvailable(reg + ' Bold')) bold = reg + ' Bold';
+    detected.push({ key:f.key, label:f.label, regular:reg, bold });
+  }
+}
+
+const q = n => '"' + n + '"';
+
+/* 字体栈按当前粗细动态生成——粗体时优先用真正的 Bold 字重文件，而不是让浏览器伪粗 */
+function fontStack(lay){
+  if (lay.font === 'custom' && customFontLoaded)
+    return '"WMCustomFont","PingFang SC",sans-serif';
+  const d = detected.find(x => x.key === lay.font);
+  if (!d) return '-apple-system,"PingFang SC",sans-serif';
+  const list = [];
+  if (lay.bold && d.bold) list.push(q(d.bold));
+  list.push(q(d.regular), '"PingFang SC"', 'sans-serif');
+  return list.join(',');
+}
+
+function fillFontSelect(){
+  const sel2 = $('fontSel');
+  sel2.innerHTML = '';
+  const add = (v, t) => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = t; sel2.appendChild(o);
+  };
+  detected.forEach(d => add(d.key, d.label));
+  if (customFontLoaded) add('custom', '我载入的字体');
+  // 一个免费商用字体都没有时，总得有个能渲染的兜底，这时才放出系统字体
+  if (!sel2.options.length) add('system', '系统默认');
+  if (![...sel2.options].some(o => o.value === S.text.font))
+    S.text.font = sel2.options[0].value;
+  sel2.value = S.text.font;
+}
+
+/* 只在出问题的时候说话：正常命中字体就完全不出现提示 */
+function checkFont(){
+  const warn = $('fontWarn');
+  if (!detected.length && !customFontLoaded){
+    warn.classList.remove('hide');
+    warn.innerHTML = '没在本机找到已知的免费商用中文字体。<br>'
+      + '<b>如果你刚装完字体：要完全退出浏览器（⌘Q，光关窗口没用）再重新打开</b>'
+      + '——浏览器启动时会把系统字体列表缓存住，刷新页面是没用的。<br>'
+      + '或者用下面的按钮载入字体文件（可同时选常规和粗体两个），这条路 100% 有效，选一次永久记住。';
+  } else if (S.text.font === 'custom' && !customFontLoaded){
+    warn.classList.remove('hide');
+    warn.textContent = '还没有载入字体文件。';
+  } else {
+    warn.classList.add('hide');
+  }
+}
+
+/* 字体文件持久化（IndexedDB，字体文件通常几 MB，放不进 localStorage） */
+function idb(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('wm-tool', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result);
+    r.onerror  = () => rej(r.error);
+  });
+}
+async function idbSet(k, v){
+  try{ const db = await idb();
+    await new Promise((res,rej)=>{ const t=db.transaction('kv','readwrite');
+      t.objectStore('kv').put(v,k); t.oncomplete=res; t.onerror=()=>rej(t.error); });
+  }catch(e){}
+}
+async function idbGet(k){
+  try{ const db = await idb();
+    return await new Promise((res,rej)=>{ const t=db.transaction('kv','readonly');
+      const g=t.objectStore('kv').get(k); g.onsuccess=()=>res(g.result); g.onerror=()=>rej(g.error); });
+  }catch(e){ return undefined; }
+}
+async function applyFontBuffer(buf, weight){
+  try{
+    const ff = new FontFace('WMCustomFont', buf, { weight: weight || '400' });
+    await ff.load();
+    document.fonts.add(ff);
+    customFontLoaded = true;
+    return true;
+  }catch(e){ return false; }
+}
+// 文件名里带这些词的当成粗体字重注册，这样勾「粗体」时用的是真粗体文件
+const BOLD_HINT = /bold|black|heavy|semibold|demibold|medium|粗|黑体|85|95|105|115/i;
+
+/* =========================================================
+   3. 设置读写
+   ========================================================= */
+function saveSettings(){
+  try{ localStorage.setItem('wm-settings', JSON.stringify(S)); }catch(e){}
+}
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem('wm-settings');
+    if (!raw) return;
+    const o = JSON.parse(raw);
+    const D = makeDefaults();
+    if (o.v !== D.v){
+      // 版本变了：参数含义可能已经不同，只保留你自己填过的内容，其余回到新默认值
+      S = D;
+      if (typeof o.text === 'string') S.text.text = o.text;          // 更早的扁平结构
+      else if (o.text && typeof o.text.text === 'string') S.text.text = o.text.text;
+      if (typeof o.suffix === 'string') S.suffix = o.suffix;
+      if (typeof o.fmt === 'string') S.fmt = o.fmt;
+      saveSettings();
+      return;
+    }
+    S = Object.assign(D, o, {
+      text:  Object.assign(D.text,  o.text  || {}),
+      image: Object.assign(D.image, o.image || {})
+    });
+  }catch(e){ S = makeDefaults(); }
+}
+
+/* =========================================================
+   4. 渲染核心 —— 预览和导出走同一套代码，所见即所得
+   ========================================================= */
+const curSize    = lay => (lay.mode === 'tile' ? lay.tileSize : lay.size);
+const curAngle   = lay => (lay.mode === 'tile' ? lay.tileAngle : lay.angle);
+function setSize(lay, v){ if (lay.mode === 'tile') lay.tileSize = v; else lay.size = v; }
+
+function fontString(lay, px){
+  return (lay.bold ? '700 ' : '400 ') + px + 'px ' + fontStack(lay);
+}
+
+/* ---- 位置：边距锚定 ----
+   不记「中心点在宽度的百分之几」，而记「离哪条边多远」，且以图片短边为单位——
+   跟字号基准一致。于是 4000×3000 和 3000×4000 上，水印距角落的留白比例完全相同。 */
+function getPos(lay, W, H){
+  const short = Math.min(W, H);
+  let cx, cy;
+  if (lay.ax === 'left')       cx = lay.ox * short;
+  else if (lay.ax === 'right') cx = W - lay.ox * short;
+  else                         cx = (0.5 + lay.ox) * W;
+  if (lay.ay === 'top')        cy = lay.oy * short;
+  else if (lay.ay === 'bottom')cy = H - lay.oy * short;
+  else                         cy = (0.5 + lay.oy) * H;
+  return { cx, cy };
+}
+function setPosFromPixels(lay, cx, cy, W, H){
+  const short = Math.min(W, H);
+  const fx = cx / W, fy = cy / H;
+  if (fx < 1/3)      { lay.ax = 'left';   lay.ox = cx / short; }
+  else if (fx > 2/3) { lay.ax = 'right';  lay.ox = (W - cx) / short; }
+  else               { lay.ax = 'center'; lay.ox = fx - 0.5; }
+  if (fy < 1/3)      { lay.ay = 'top';    lay.oy = cy / short; }
+  else if (fy > 2/3) { lay.ay = 'bottom'; lay.oy = (H - cy) / short; }
+  else               { lay.ay = 'center'; lay.oy = fy - 0.5; }
+}
+function posLabel(lay){
+  const X = { left:'靠左', center:'水平居中', right:'靠右' }[lay.ax];
+  const Y = { top:'靠上', center:'垂直居中', bottom:'靠下' }[lay.ay];
+  const d = [];
+  if (lay.ax !== 'center') d.push('距' + (lay.ax === 'left' ? '左' : '右') + '边 ' + (lay.ox*100).toFixed(1) + '%');
+  if (lay.ay !== 'center') d.push('距' + (lay.ay === 'top' ? '上' : '下') + '边 ' + (lay.oy*100).toFixed(1) + '%');
+  return Y + '、' + X + (d.length ? '（' + d.join('，') + '）' : '');
+}
+
+// 量出水印本体尺寸（目标画布像素）
+function measureItem(c, W, H, key){
+  const lay = S[key], short = Math.min(W, H);
+  if (key === 'image'){
+    if (!wmImg) return null;
+    // 也按短边算，横图竖图上水印的实际大小才一致
+    const w = (curSize(lay) / 100) * short * 2.4;
+    return { w, h: w * (wmImg.height / wmImg.width) };
+  }
+  const lines = (lay.text || '').split('\n');
+  if (!lay.text || !lay.text.trim()) return null;
+  const px = Math.max(4, (curSize(lay) / 100) * short);
+  c.save(); c.font = fontString(lay, px);
+  let w = 0;
+  for (const l of lines) w = Math.max(w, c.measureText(l || ' ').width);
+  c.restore();
+  const lineH = px * 1.28;
+  return { w: Math.max(w, px * .4), h: lineH * lines.length, px, lineH, lines };
+}
+
+function isLight(hex){
+  const n = parseInt(hex.slice(1), 16);
+  const r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  return (0.299*r + 0.587*g + 0.114*b) > 150;
+}
+
+// 在当前坐标系原点画一个水印本体（中心对齐）
+function paintItem(c, m, key){
+  const lay = S[key];
+  if (key === 'image'){ c.drawImage(wmImg, -m.w/2, -m.h/2, m.w, m.h); return; }
+  c.font = fontString(lay, m.px);
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillStyle = lay.color;
+  const n = m.lines.length;
+  if (lay.stroke){
+    c.lineWidth = Math.max(1, m.px * 0.06);
+    c.strokeStyle = isLight(lay.color) ? 'rgba(0,0,0,.65)' : 'rgba(255,255,255,.75)';
+    c.lineJoin = 'round';
+  }
+  for (let i = 0; i < n; i++){
+    const y = (i - (n - 1) / 2) * m.lineH;
+    if (lay.stroke) c.strokeText(m.lines[i], 0, y);
+    c.fillText(m.lines[i], 0, y);
+  }
+}
+
+// 画单个图层
+function drawLayer(c, W, H, key){
+  const lay = S[key];
+  if (!lay.on) return null;
+  const m = measureItem(c, W, H, key);
+  if (!m) return null;
+  const rad = curAngle(lay) * Math.PI / 180;
+
+  c.save();
+  c.globalAlpha = lay.opacity / 100;
+
+  if (lay.mode === 'tile'){
+    // 横竖用同一个间距值，铺出来才均匀
+    const gapPx = Math.max(2, (lay.gap / 100) * m.h);
+    const stepX = Math.max(8, m.w + gapPx);
+    const stepY = Math.max(8, m.h + gapPx);
+    const diag = Math.hypot(W, H);
+    c.translate(W/2, H/2);
+    c.rotate(rad);
+    let guard = 0;
+    for (let y = -diag/2; y <= diag/2 && guard < 20000; y += stepY){
+      const odd = Math.round((y + diag/2) / stepY) % 2;
+      for (let x = -diag/2; x <= diag/2 && guard < 20000; x += stepX, guard++){
+        c.save(); c.translate(x + odd * stepX/2, y); paintItem(c, m, key); c.restore();
+      }
+    }
+  } else {
+    const p = getPos(lay, W, H);
+    c.translate(p.cx, p.cy);
+    c.rotate(rad);
+    paintItem(c, m, key);
+  }
+  c.restore();
+  return m;
+}
+
+// 把所有开着的图层画到画布上（图片图层在下、文字在上）
+function drawWatermark(c, W, H){
+  const out = {};
+  for (const k of ['image', 'text']) out[k] = drawLayer(c, W, H, k);
+  return out;
+}
+
+/* =========================================================
+   5. 预览 + 引导框交互
+   ========================================================= */
+let viewW = 0, viewH = 0;   // 预览画布像素尺寸
+
+// 只为「当前正在预览的那张」解码一份缩小版位图，避免把几百张原图塞进内存
+async function loadCur(){
+  const img = images[sel];
+  if (!img){ curBmp = null; curFor = null; renderPreview(); return; }
+  if (curFor === img && curBmp){ renderPreview(); return; }
+  const sc = Math.min(1, 1800 / Math.max(img.w, img.h));
+  let bmp = null;
+  try{
+    bmp = await createImageBitmap(img.file, {
+      imageOrientation: 'from-image',
+      resizeWidth:  Math.max(1, Math.round(img.w * sc)),
+      resizeHeight: Math.max(1, Math.round(img.h * sc)),
+      resizeQuality: 'high'
+    });
+  }catch(e){
+    try{ bmp = await createImageBitmap(img.file); }catch(e2){ bmp = null; }
+  }
+  if (images[sel] !== img){ if (bmp && bmp.close) bmp.close(); return; }  // 期间切走了
+  if (curBmp && curBmp.close) curBmp.close();
+  curBmp = bmp; curFor = img;
+  renderPreview();
+}
+
+function renderPreview(){
+  const img = images[sel];
+  const stage = $('stage');
+  if (!img || !curBmp || curFor !== img){
+    cv.classList.add('hide'); $('empty').classList.remove('hide'); return;
+  }
+  cv.classList.remove('hide'); $('empty').classList.add('hide');
+
+  const sc = Math.min((stage.clientWidth - 32) / img.w, (stage.clientHeight - 32) / img.h, 1);
+  const cssW = Math.max(40, Math.round(img.w * sc));
+  const cssH = Math.max(40, Math.round(img.h * sc));
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  cv.style.width  = cssW + 'px';
+  cv.style.height = cssH + 'px';
+  viewW = cv.width  = Math.round(cssW * dpr);
+  viewH = cv.height = Math.round(cssH * dpr);
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,viewW,viewH);
+  ctx.drawImage(curBmp, 0, 0, viewW, viewH);
+  const ms = drawWatermark(ctx, viewW, viewH);
+
+  // 引导框：当前编辑的那个画实线蓝框+手柄，另一个只画一圈淡框提示它在哪
+  for (const k of LAYER_KEYS){
+    if (!S[k].on || S[k].mode !== 'single' || !ms[k]) continue;
+    drawGuide(ctx, ms[k], k, k === S.active);
+  }
+  const m = ms[S.active];
+  cv.style.cursor = (S[S.active].on && S[S.active].mode === 'single' && m) ? 'move' : 'default';
+}
+
+const HANDLE_R = 7;   // CSS px
+function guideBox(m, key){
+  const lay = S[key];
+  const pad = Math.max(6, m.h * 0.14);
+  const p = getPos(lay, viewW, viewH);
+  return { cx: p.cx, cy: p.cy, hw: m.w/2 + pad, hh: m.h/2 + pad };
+}
+function drawGuide(c, m, key, isActive){
+  const b = guideBox(m, key);
+  const dpr = viewW / cv.clientWidth;
+  c.save();
+  c.translate(b.cx, b.cy);
+  c.rotate(curAngle(S[key]) * Math.PI / 180);
+  c.setLineDash([6*dpr, 5*dpr]);
+  c.lineWidth = (isActive ? 1.5 : 1) * dpr;
+  c.strokeStyle = isActive ? 'rgba(47,111,237,.95)' : 'rgba(140,140,150,.6)';
+  c.strokeRect(-b.hw, -b.hh, b.hw*2, b.hh*2);
+  c.setLineDash([]);
+  if (isActive){
+    c.beginPath();
+    c.arc(b.hw, b.hh, HANDLE_R * dpr, 0, Math.PI*2);
+    c.fillStyle = '#2f6fed'; c.fill();
+    c.lineWidth = 2*dpr; c.strokeStyle = '#fff'; c.stroke();
+  }
+  c.restore();
+}
+
+// 点击命中测试：返回 'handle' | 'body' | null
+function hitTest(key, px, py){
+  const lay = S[key];
+  if (!lay.on || lay.mode !== 'single') return null;
+  const m = measureItem(ctx, viewW, viewH, key);
+  if (!m) return null;
+  const b = guideBox(m, key);
+  const rad = -curAngle(lay) * Math.PI / 180;
+  const dx = px - b.cx, dy = py - b.cy;
+  const lx = dx*Math.cos(rad) - dy*Math.sin(rad);
+  const ly = dx*Math.sin(rad) + dy*Math.cos(rad);
+  const dpr = viewW / cv.clientWidth;
+  if (key === S.active && Math.hypot(lx - b.hw, ly - b.hh) < HANDLE_R * dpr * 2.2) return 'handle';
+  if (Math.abs(lx) <= b.hw && Math.abs(ly) <= b.hh) return 'body';
+  return null;
+}
+
+let drag = null;
+function evPos(e){
+  const r = cv.getBoundingClientRect();
+  return { px: (e.clientX - r.left) / r.width * viewW,
+           py: (e.clientY - r.top)  / r.height * viewH };
+}
+
+cv.addEventListener('pointerdown', e => {
+  if (sel < 0) return;
+  const { px, py } = evPos(e);
+  // 先测当前编辑的图层，让它优先；没中再测另一个（点中就切过去编辑）
+  const order = [S.active].concat(LAYER_KEYS.filter(k => k !== S.active));
+  for (const key of order){
+    const hit = hitTest(key, px, py);
+    if (!hit) continue;
+    if (key !== S.active){ S.active = key; syncUI(); }
+    const b = guideBox(measureItem(ctx, viewW, viewH, key), key);
+    drag = hit === 'handle'
+      ? { key, type:'size', startDist: Math.hypot(px - b.cx, py - b.cy) || 1,
+          startSize: curSize(S[key]) }
+      : { key, type:'move', ox: b.cx - px, oy: b.cy - py };
+    cv.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    renderPreview();
+    return;
+  }
+});
+
+cv.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const { px, py } = evPos(e);
+  const lay = S[drag.key];
+  if (drag.type === 'move'){
+    setPosFromPixels(lay, clamp(px + drag.ox, 0, viewW), clamp(py + drag.oy, 0, viewH), viewW, viewH);
+    $('posInfo').textContent = '当前位置：' + posLabel(lay);
+  } else {
+    const m = measureItem(ctx, viewW, viewH, drag.key);
+    const b = guideBox(m || {w:0,h:0}, drag.key);
+    const d = Math.hypot(px - b.cx, py - b.cy) || 1;
+    setSize(lay, clamp(drag.startSize * d / drag.startDist, 1, 60));
+    $('sSize').value = curSize(lay);
+    $('vSize').textContent = curSize(lay).toFixed(1) + '%';
+  }
+  renderPreview();
+});
+function endDrag(){ if (drag){ drag = null; saveSettings(); } }
+cv.addEventListener('pointerup', endDrag);
+cv.addEventListener('pointercancel', endDrag);
+
+/* =========================================================
+   6. 导入图片
+   ========================================================= */
+// 只量尺寸，不把原图留在内存里
+function probeSize(url){
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload  = () => res({ w: im.naturalWidth, h: im.naturalHeight });
+    im.onerror = rej;
+    im.src = url;
+  });
+}
+
+async function addFiles(fileList){
+  const files = Array.from(fileList).filter(f => /^image\//.test(f.type));
+  if (!files.length){ msg('没有可用的图片文件'); return; }
+  msg('正在读取 ' + files.length + ' 张图片…');
+  let bad = 0;
+  for (const f of files){
+    const url = URL.createObjectURL(f);
+    try{
+      const { w, h } = await probeSize(url);
+      if (!w || !h) throw new Error('尺寸为 0');
+      const dot = f.name.lastIndexOf('.');
+      images.push({
+        name: f.name,
+        base: dot > 0 ? f.name.slice(0, dot) : f.name,
+        w, h, file: f, thumbURL: url
+      });
+    }catch(e){ URL.revokeObjectURL(url); bad++; }
+  }
+  if (sel < 0 && images.length) sel = 0;
+  renderStrip(); updateBar(); loadCur();
+  msg('已载入 ' + images.length + ' 张图片' + (bad ? '（' + bad + ' 张读不了，已跳过）' : ''));
+}
+
+function renderStrip(){
+  const strip = $('strip');
+  strip.innerHTML = '';
+  if (!images.length){ strip.innerHTML = '<span id="stripEmpty">还没有图片</span>'; return; }
+  images.forEach((im, i) => {
+    const d = document.createElement('div');
+    d.className = 'thumb' + (i === sel ? ' on' : '');
+    d.title = im.name;
+    d.innerHTML = '<img src="' + im.thumbURL + '"><div class="x">✕</div>';
+    d.onclick = ev => {
+      if (ev.target.classList.contains('x')){
+        URL.revokeObjectURL(im.thumbURL);
+        if (curFor === im){ if (curBmp && curBmp.close) curBmp.close(); curBmp = null; curFor = null; }
+        images.splice(i,1);
+        if (sel >= images.length) sel = images.length - 1;
+        renderStrip(); updateBar(); loadCur();
+      } else { sel = i; renderStrip(); loadCur(); }
+    };
+    strip.appendChild(d);
+  });
+}
+
+/* =========================================================
+   7. 导出
+   ========================================================= */
+// 双击打开的本地网页（file://）被浏览器禁止写入桌面/下载等文件夹，
+// 所以这种情况下不弹文件夹选择器，统一走下载，避免出现选哪都失败。
+const CAN_PICK_DIR = !!window.showDirectoryPicker && location.protocol !== 'file:';
+
+function outName(base){
+  const clean = s => String(s).replace(/[\/\\:*?"<>|]/g, '_');
+  return clean(base) + clean(S.suffix) + (S.fmt === 'png' ? '.png' : '.jpg');
+}
+
+async function renderFull(im){
+  let bmp;
+  try{ bmp = await createImageBitmap(im.file, { imageOrientation:'from-image' }); }
+  catch(e){ bmp = await createImageBitmap(im.file); }
+  const W = bmp.width, H = bmp.height;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  x.drawImage(bmp, 0, 0, W, H);
+  if (bmp.close) bmp.close();
+  if (S.fmt === 'jpeg'){
+    // JPG 不支持透明，给本身透明的源图垫白底
+    x.globalCompositeOperation = 'destination-over';
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
+    x.globalCompositeOperation = 'source-over';
+  }
+  drawWatermark(x, W, H);
+  const blob = await new Promise(res =>
+    c.toBlob(res, S.fmt === 'png' ? 'image/png' : 'image/jpeg', S.quality/100));
+  c.width = c.height = 0;
+  return blob;
+}
+
+async function doExport(){
+  if (busy || !images.length) return;
+  if (!activeLayers().length){ msg('先在「水印内容」里选一种'); return; }
+  if (S.image.on && !wmImg){ msg('还没选水印图片'); return; }
+  if (S.text.on && !S.text.text.trim()){ msg('水印文字是空的'); return; }
+  busy = true; $('btnExport').disabled = true;
+
+  let dir = null;
+  if (CAN_PICK_DIR){
+    try{ dir = await window.showDirectoryPicker({ mode:'readwrite' }); }
+    catch(e){
+      if (e && e.name === 'AbortError'){ busy=false; $('btnExport').disabled=false; msg('已取消'); return; }
+      dir = null;
+    }
+  }
+
+  const zipEntries = [];
+  const used = new Set();
+  let ok = 0, fail = 0;
+
+  for (let i = 0; i < images.length; i++){
+    const im = images[i];
+    msg('正在处理 ' + (i+1) + ' / ' + images.length + '：' + im.name);
+    $('prog').style.width = (i / images.length * 100) + '%';
+    await new Promise(r => setTimeout(r, 0));   // 让界面有机会刷新
+    try{
+      const blob = await renderFull(im);
+      if (!blob) throw new Error('编码失败');
+      let name = outName(im.base), n = 2;
+      while (used.has(name)) name = outName(im.base + '(' + (n++) + ')');
+      used.add(name);
+      if (dir){
+        const fh = await dir.getFileHandle(name, { create:true });
+        const ws = await fh.createWritable();
+        await ws.write(blob); await ws.close();
+      } else if (S.dlMode === 'each'){
+        download(blob, name);
+        await new Promise(r => setTimeout(r, 300));  // 给浏览器留出处理下载的时间
+      } else {
+        zipEntries.push({ name, data: new Uint8Array(await blob.arrayBuffer()) });
+      }
+      ok++;
+    }catch(e){ fail++; }
+  }
+
+  $('prog').style.width = '100%';
+
+  if (!dir && zipEntries.length){
+    if (zipEntries.length === 1){
+      download(new Blob([zipEntries[0].data]), zipEntries[0].name);
+    } else {
+      const d = new Date();
+      const p = n => String(n).padStart(2,'0');
+      const stamp = '' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate())
+                  + '_' + p(d.getHours()) + p(d.getMinutes());
+      download(buildZip(zipEntries), '加水印_' + stamp + '.zip');
+    }
+  }
+
+  msg('完成：成功 ' + ok + ' 张' + (fail ? '，失败 ' + fail + ' 张' : '')
+      + (dir ? '，已写入所选文件夹'
+             : (zipEntries.length > 1 ? '，已打包成 zip 下载' : '，已下载图片')));
+  setTimeout(() => { $('prog').style.width = '0'; }, 900);
+  busy = false; updateBar();
+}
+
+function download(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+}
+
+/* ---- 极简 ZIP（仅存储，不压缩；JPG/PNG 本来也压不动） ---- */
+const CRC_T = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++){
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8){
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function buildZip(entries){
+  const enc = new TextEncoder();
+  const parts = [], central = [];
+  let offset = 0;
+  const d = new Date();
+  const dTime = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF;
+  const dDate = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+
+  for (const e of entries){
+    const nb = enc.encode(e.name);
+    const crc = crc32(e.data);
+    const lh = new Uint8Array(30 + nb.length), lv = new DataView(lh.buffer);
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true);
+    lv.setUint16(6, 0x0800, true);     lv.setUint16(8, 0, true);
+    lv.setUint16(10, dTime, true);     lv.setUint16(12, dDate, true);
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, e.data.length, true); lv.setUint32(22, e.data.length, true);
+    lv.setUint16(26, nb.length, true); lv.setUint16(28, 0, true);
+    lh.set(nb, 30);
+    parts.push(lh, e.data);
+
+    const ch = new Uint8Array(46 + nb.length), cw = new DataView(ch.buffer);
+    cw.setUint32(0, 0x02014b50, true); cw.setUint16(4, 20, true);
+    cw.setUint16(6, 20, true);         cw.setUint16(8, 0x0800, true);
+    cw.setUint16(10, 0, true);
+    cw.setUint16(12, dTime, true);     cw.setUint16(14, dDate, true);
+    cw.setUint32(16, crc, true);
+    cw.setUint32(20, e.data.length, true); cw.setUint32(24, e.data.length, true);
+    cw.setUint16(28, nb.length, true);
+    cw.setUint16(30, 0, true); cw.setUint16(32, 0, true); cw.setUint16(34, 0, true);
+    cw.setUint16(36, 0, true); cw.setUint32(38, 0, true);
+    cw.setUint32(42, offset, true);
+    ch.set(nb, 46);
+    central.push(ch);
+    offset += lh.length + e.data.length;
+  }
+  let cSize = 0; for (const c of central) cSize += c.length;
+  const end = new Uint8Array(22), ev = new DataView(end.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(8, entries.length, true); ev.setUint16(10, entries.length, true);
+  ev.setUint32(12, cSize, true); ev.setUint32(16, offset, true);
+  return new Blob(parts.concat(central, [end]), { type:'application/zip' });
+}
+
+/* =========================================================
+   8. 界面绑定
+   ========================================================= */
+function msg(t){ $('barMsg').textContent = t; }
+function updateBar(){
+  $('btnExport').disabled = !images.length || busy;
+  $('btnExport').textContent = images.length > 1 ? ('批量导出 ' + images.length + ' 张') : '导出';
+}
+
+// 没有拖拽手柄了，改成跟着内容自动长高
+function autoGrow(){
+  const t = $('wmText');
+  t.style.height = 'auto';
+  t.style.height = Math.max(52, t.scrollHeight) + 'px';
+}
+
+function syncUI(){
+  const lay = L();
+  // 水印内容三选一
+  document.querySelectorAll('#segKind button').forEach(b =>
+    b.classList.toggle('on', b.dataset.v === S.kind));
+  // 只有「文字+图片」时才需要切换正在调哪一个
+  $('rowEdit').classList.toggle('hide', S.kind !== 'both');
+  $('bothHint').classList.toggle('hide', S.kind !== 'both');
+  document.querySelectorAll('#editPick button').forEach(b =>
+    b.classList.toggle('on', b.dataset.l === S.active));
+
+  // 摆放方式
+  document.querySelectorAll('#segMode button').forEach(b =>
+    b.classList.toggle('on', b.dataset.v === lay.mode));
+  $('modeHint').textContent = lay.mode === 'single'
+    ? '在右侧预览里把虚线框拖到想要的位置，拖右下角圆点可缩放。'
+    : '水印斜向铺满整张图，适合证件、防盗用。用「角度」和「间距」调节疏密。';
+  $('posInfo').textContent = lay.mode === 'single' ? ('当前位置：' + posLabel(lay)) : '';
+
+  // 只显示当前图层相关的设置
+  $('grpText').classList.toggle('hide', S.active !== 'text');
+  $('grpImg').classList.toggle('hide', S.active !== 'image');
+  $('rowGap').classList.toggle('hide', lay.mode !== 'tile');
+
+  if (S.active === 'text'){
+    $('wmText').value = S.text.text;
+    autoGrow();
+    $('fontSel').value = S.text.font;
+    $('wmColor').value = S.text.color;
+    $('wmBold').checked = S.text.bold;
+    $('wmStroke').checked = S.text.stroke;
+  }
+
+  $('sSize').value = curSize(lay);    $('vSize').textContent = (+curSize(lay)).toFixed(1) + '%';
+  $('sOpa').value  = lay.opacity;     $('vOpa').textContent  = lay.opacity + '%';
+  $('sAng').value  = curAngle(lay);   $('vAng').textContent  = curAngle(lay) + '°';
+  $('sGap').value  = lay.gap;         $('vGap').textContent  = lay.gap + '%';
+
+  $('fmt').value = S.fmt;
+  $('sQ').value  = S.quality;  $('vQ').textContent = S.quality;
+  $('rowQ').classList.toggle('hide', S.fmt !== 'jpeg');
+  $('suffix').value = S.suffix;
+  $('dlMode').value = S.dlMode;
+  $('egName').textContent = outName('照片');
+  $('dlHint').innerHTML = (S.dlMode === 'each'
+      ? '每张图单独下载。浏览器会问一次「是否允许下载多个文件」，点允许即可。'
+      : '多张打包成一个 zip，单张直接下载图片。')
+    + '<br>想每次自己挑保存位置：<b>Chrome 设置 → 下载内容 → 打开「下载前询问每个文件的保存位置」</b>。';
+  checkFont();
+}
+
+function bump(){ syncUI(); saveSettings(); renderPreview(); }
+
+/* ---- 水印内容三选一 ---- */
+document.querySelectorAll('#segKind button').forEach(b =>
+  b.onclick = () => {
+    setKind(b.dataset.v);
+    if (S.image.on && !wmImg) msg('记得在下面选一张水印图片');
+    bump();
+  });
+/* ---- both 时切换正在调哪一个 ---- */
+document.querySelectorAll('#editPick button').forEach(b =>
+  b.onclick = () => { S.active = b.dataset.l; bump(); });
+
+/* ---- 摆放方式 ---- */
+document.querySelectorAll('#segMode button').forEach(b =>
+  b.onclick = () => { L().mode = b.dataset.v; bump(); });
+
+/* ---- 文字 ---- */
+$('wmText').oninput  = e => { S.text.text = e.target.value; autoGrow(); saveSettings(); renderPreview(); };
+$('fontSel').onchange= e => { S.text.font = e.target.value; bump(); };
+$('wmColor').oninput = e => { S.text.color = e.target.value; saveSettings(); renderPreview(); };
+$('wmBold').onchange = e => { S.text.bold = e.target.checked; saveSettings(); renderPreview(); };
+$('wmStroke').onchange=e => { S.text.stroke = e.target.checked; saveSettings(); renderPreview(); };
+
+/* ---- 外观（作用于当前图层） ---- */
+$('sSize').oninput = e => {
+  setSize(L(), +e.target.value);
+  $('vSize').textContent = curSize(L()).toFixed(1) + '%'; saveSettings(); renderPreview();
+};
+$('sOpa').oninput = e => {
+  L().opacity = +e.target.value;
+  $('vOpa').textContent = L().opacity + '%'; saveSettings(); renderPreview();
+};
+$('sAng').oninput = e => {
+  const v = +e.target.value, lay = L();
+  if (lay.mode === 'tile') lay.tileAngle = v; else lay.angle = v;
+  $('vAng').textContent = v + '°'; saveSettings(); renderPreview();
+};
+$('sGap').oninput = e => {
+  L().gap = +e.target.value;
+  $('vGap').textContent = L().gap + '%'; saveSettings(); renderPreview();
+};
+
+/* ---- 输出 ---- */
+$('fmt').onchange    = e => { S.fmt = e.target.value; bump(); };
+$('dlMode').onchange = e => { S.dlMode = e.target.value; bump(); };
+$('sQ').oninput      = e => { S.quality = +e.target.value; $('vQ').textContent=S.quality; saveSettings(); };
+$('suffix').oninput  = e => { S.suffix = e.target.value; $('egName').textContent=outName('照片'); saveSettings(); };
+
+$('btnReset').onclick = () => {
+  S = makeDefaults();
+  setKind(S.kind);
+  fillFontSelect(); bump(); msg('已恢复默认设置');
+};
+
+/* ---- 图片 ---- */
+$('btnAdd').onclick   = () => $('fileIn').click();
+$('empty').onclick    = () => $('fileIn').click();
+$('fileIn').onchange  = e => { addFiles(e.target.files); e.target.value = ''; };
+$('btnClear').onclick = () => {
+  images.forEach(i => URL.revokeObjectURL(i.thumbURL));
+  if (curBmp && curBmp.close) curBmp.close();
+  curBmp = null; curFor = null;
+  images = []; sel = -1; renderStrip(); renderPreview(); updateBar(); msg('已清空');
+};
+$('btnExport').onclick = doExport;
+
+$('btnWmImg').onclick = () => $('wmImgIn').click();
+$('wmImgIn').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try{
+    wmImg = await createImageBitmap(f);
+    wmImgName = f.name;
+    $('wmImgName').textContent = '当前：' + f.name;
+    if (f.size < 4 * 1024 * 1024){
+      await idbSet('wmimg', await f.arrayBuffer());
+      await idbSet('wmimgName', f.name);
+    }
+    bump();
+  }catch(err){ msg('这张图片读不了'); }
+};
+
+$('btnFontFile').onclick = () => $('fontIn').click();
+$('fontIn').onchange = async e => {
+  const files = Array.from(e.target.files || []); e.target.value = '';
+  if (!files.length) return;
+  const saved = [], names = [];
+  for (const f of files){
+    const buf = await f.arrayBuffer();
+    const weight = BOLD_HINT.test(f.name) ? '700' : '400';
+    if (await applyFontBuffer(buf, weight)){ saved.push({ buf, weight }); names.push(f.name); }
+  }
+  if (!saved.length){ msg('这些字体文件读不了，试试 .ttf 或 .otf'); return; }
+  await idbSet('fontFiles', saved);
+  S.text.font = 'custom';
+  fillFontSelect(); bump();
+  msg('字体已载入：' + names.join('、') + '（已记住，下次自动生效）');
+};
+
+/* ---- 拖拽导入 ---- */
+let dragDepth = 0;
+window.addEventListener('dragover',  e => e.preventDefault());
+window.addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; $('drop').classList.remove('hide'); });
+window.addEventListener('dragleave', () => { dragDepth--; if (dragDepth <= 0){ dragDepth = 0; $('drop').classList.add('hide'); } });
+window.addEventListener('drop', e => {
+  e.preventDefault(); dragDepth = 0; $('drop').classList.add('hide');
+  if (e.dataTransfer && e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+});
+
+window.addEventListener('resize', () => renderPreview());
+window.addEventListener('keydown', e => {
+  if (!images.length) return;
+  if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'ArrowRight'){ sel = (sel + 1) % images.length; renderStrip(); loadCur(); }
+  if (e.key === 'ArrowLeft'){ sel = (sel - 1 + images.length) % images.length; renderStrip(); loadCur(); }
+});
+
+/* =========================================================
+   9. 启动
+   ========================================================= */
+(async function init(){
+  loadSettings();
+  setKind(S.kind);       // 保证 kind 和两个图层的开关始终一致
+  detectFonts();
+  const list = await idbGet('fontFiles');
+  if (Array.isArray(list)) for (const it of list) await applyFontBuffer(it.buf, it.weight);
+  else { const old = await idbGet('font'); if (old) await applyFontBuffer(old, '400'); }
+  fillFontSelect();
+
+  const ibuf = await idbGet('wmimg');
+  if (ibuf){
+    try{
+      wmImg = await createImageBitmap(new Blob([ibuf]));
+      wmImgName = (await idbGet('wmimgName')) || '上次的图片';
+      $('wmImgName').textContent = '当前：' + wmImgName;
+    }catch(e){}
+  }
+  fillFontSelect();
+  syncUI(); updateBar(); renderPreview();
+  if (!CAN_PICK_DIR) msg('导出方式：多张会打包成一个 zip 下载，单张直接下载');
+})();
+</script>
+</body>
+</html>
